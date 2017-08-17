@@ -148,6 +148,33 @@ class CommentForm(FlaskForm):
     ])
 
 
+class InlineButtonWidget(object):
+    """
+    Render a basic ``<button>`` field.
+    """
+    input_type = 'submit'
+    html_params = staticmethod(html_params)
+
+    def __call__(self, field, label=None, **kwargs):
+        kwargs.setdefault('id', field.id)
+        kwargs.setdefault('type', self.input_type)
+        if not label:
+            label = field.label.text
+        return HTMLString('<button %s>' % self.html_params(name=field.name, **kwargs) + label)
+
+
+class StringSubmitField(StringField):
+    """
+    Represents an ``<button type="submit">``.  This allows checking if a given
+    submit button has been pressed.
+    """
+    widget = InlineButtonWidget()
+
+
+class StringSubmitForm(FlaskForm):
+    submit = StringSubmitField('Submit')
+
+
 class EditForm(FlaskForm):
     display_name = StringField('Torrent display name', [
         Length(min=3, max=255, message='Torrent display name must be at least %(min)d characters '
@@ -185,12 +212,25 @@ class EditForm(FlaskForm):
         Length(max=10 * 1024, message='Description must be at most %(max)d characters long.')
     ])
 
+    submit = SubmitField('Save Changes')
+
 
 class DeleteForm(FlaskForm):
     delete = SubmitField("Delete")
     ban = SubmitField("Delete & Ban")
     undelete = SubmitField("Undelete")
     unban = SubmitField("Unban")
+
+
+class BanForm(FlaskForm):
+    ban_user = SubmitField("Delete & Ban and Ban User")
+    unban_user = SubmitField("Unban User")
+    ban_userip = SubmitField("Delete & Ban and Ban User+IP")
+
+    reason = TextAreaField('Ban Reason', [
+        Length(min=3, max=1024, message='Reason must be at most %(max)d characters long.'),
+        DataRequired()
+    ])
 
 
 class UploadForm(FlaskForm):

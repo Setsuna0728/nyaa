@@ -23,11 +23,13 @@ def view_user(user_name):
         flask.abort(404)
 
     admin_form = None
+    ban_form = None
     if flask.g.user and flask.g.user.is_moderator and flask.g.user.level > user.level:
         admin_form = forms.UserForm()
         default, admin_form.user_class.choices = _create_user_class_choices(user)
         if flask.request.method == 'GET':
             admin_form.user_class.data = default
+    ban_form = forms.BanForm()
 
     url = flask.url_for('users.view_user', user_name=user.username)
     if flask.request.method == 'POST' and admin_form and admin_form.validate():
@@ -42,9 +44,6 @@ def view_user(user_name):
         elif selection == 'moderator':
             user.level = models.UserLevelType.MODERATOR
             log = "[{}]({}) changed to moderator user".format(user_name, url)
-        elif selection == 'banned':
-            user.status = models.UserStatusType.BANNED
-            log = "[{}]({}) changed to banned user".format(user_name, url)
 
         adminlog = models.AdminLog(log=log, admin_id=flask.g.user.id)
         db.session.add(user)
@@ -52,6 +51,9 @@ def view_user(user_name):
         db.session.commit()
 
         return flask.redirect(url)
+
+    if flask.request.method == 'POST':
+        pass
 
     req_args = flask.request.args
 
@@ -117,7 +119,8 @@ def view_user(user_name):
                                      user=user,
                                      user_page=True,
                                      rss_filter=rss_query_string,
-                                     admin_form=admin_form)
+                                     admin_form=admin_form,
+                                     ban_form=ban_form)
     # Similar logic as home page
     else:
         if use_elastic:
@@ -132,7 +135,8 @@ def view_user(user_name):
                                      user=user,
                                      user_page=True,
                                      rss_filter=rss_query_string,
-                                     admin_form=admin_form)
+                                     admin_form=admin_form,
+                                     ban_form=ban_form)
 
 
 @bp.route('/user/activate/<payload>')
@@ -164,8 +168,6 @@ def _create_user_class_choices(user):
             choices.append(('trusted', 'Trusted'))
         if flask.g.user.is_superadmin:
             choices.append(('moderator', 'Moderator'))
-        if flask.g.user.is_moderator:
-            choices.append(('banned', 'Banned'))
 
         if user:
             if user.is_moderator:

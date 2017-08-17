@@ -15,10 +15,10 @@
 {% if g.user and g.user.is_moderator %}
 	<h2>User Information</h2><br>
 	<div class="row" style="margin-bottom: 20px;">
-		<div class="col-sm-2" style="max-width: 150px;">
+		<div class="col-md-2" style="max-width: 150px;">
 			<img class="avatar" src="{{ user.gravatar_url() }}">
 		</div>
-		<div class="col-sm-10">
+		<div class="col-md-5">
 			<dl class="dl-horizontal">
 				<dt>User ID:</dt>
 				<dd>{{ user.id }}</dd>
@@ -35,6 +35,37 @@
 				<dd>{{ user.ip_string }}</dd><br>
 				{%- endif -%}
 			</dl>
+		</div>
+		<div class="col-md-4">
+			<div class="panel panel-danger">
+				<div class="panel-heading">
+					<h3 class="panel-title">Danger Zone</h3>
+				</div>
+				<div class="panel-body">
+					<form method="POST">
+						{{ ban_form.csrf_token }}
+						{% if user.is_banned or user.bans %}
+						<p>
+							This user is <strong>banned</strong>.
+							{% for ban in user.bans %}
+							<br>#{{ ban.id }} by {{ ban.admin.username }} for {{ ban.reason }}
+							{% endfor %}
+						</p>
+						{{ ban_form.unban_user(class="btn btn-info") }}
+						{% else %}
+						<p>
+							This user is <strong>not banned</strong>.
+						</p>
+						<div class="pull-left">
+							{{ ban_form.ban_user(value="Ban User", class="btn btn-danger") }}
+						</div>
+						<div class="pull-right">
+							{{ ban_form.ban_userip(value="Ban User+IP", class="btn btn-danger") }}
+						</div>
+						{% endif %}
+					</form>
+				</div>
+			</div>
 		</div>
 	</div>
 	{% if admin_form %}
